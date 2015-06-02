@@ -10,10 +10,12 @@
 #include "consensus/consensus.h"
 #include "consensus/validation.h"
 #include "hash.h"
+#include "crypto/scrypt.h"
 #include "main.h"
 #include "net.h"
 #include "pow.h"
 #include "primitives/transaction.h"
+#include "primitives/block.h"
 #include "timedata.h"
 #include "util.h"
 #include "utilmoneystr.h"
@@ -363,6 +365,7 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
 }
 
 #ifdef ENABLE_WALLET
+/*
 //////////////////////////////////////////////////////////////////////////////
 //
 // Internal miner
@@ -400,7 +403,7 @@ bool static ScanHash(const CBlockHeader *pblock, uint32_t& nNonce, uint256 *phas
             return false;
     }
 }
-
+*/
 CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
 {
     CPubKey pubkey;
@@ -490,22 +493,21 @@ void static BitcoinMiner(CWallet *pwallet)
             // Search
             //
             int64_t nStart = GetTime();
-            arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
-            uint256 hash;
-            uint32_t nNonce = 0;
+            uint256 hashTarget = uint256().SetCompact(pblock->nBits);
+            uint256 thash;
             while (true) {
-                // Check if something found
-                if (ScanHash(pblock, nNonce, &hash))
+                unsigned int nHashesDone = 0;
+                char scratchpad[SCRYPT_SCRATCHPAD_SIZE];
+                while(true)
                 {
-                    if (UintToArith256(hash) <= hashTarget)
+                    scrypt_1024_1_1_256_sp(BEGIN(pblock->nVersion), BEGIN(thash), scratchpad);
+                    if (thash <= hashTarget)
                     {
                         // Found a solution
-                        pblock->nNonce = nNonce;
-                        assert(hash == pblock->GetHash());
-
+                     
                         SetThreadPriority(THREAD_PRIORITY_NORMAL);
                         LogPrintf("BitcoinMiner:\n");
-                        LogPrintf("proof-of-work found  \n  hash: %s  \ntarget: %s\n", hash.GetHex(), hashTarget.GetHex());
+                        LogPrintf("proof-of-work found  \n  powhash: %s  \ntarget: %s\n", thash.GetHex(), hashTarget.GetHex());
                         ProcessBlockFound(pblock, *pwallet, reservekey);
                         SetThreadPriority(THREAD_PRIORITY_LOWEST);
 
@@ -515,6 +517,10 @@ void static BitcoinMiner(CWallet *pwallet)
 
                         break;
                     }
+					pblock->nNonce += 1;
+                    nHashesDone += 1;
+                    if ((pblock->nNonce & 0xFF) == 0)
+                        break;
                 }
 
                 // Check for stop or if block needs to be rebuilt
@@ -522,7 +528,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 // Regtest mode doesn't require peers
                 if (vNodes.empty() && chainparams.MiningRequiresPeers())
                     break;
-                if (nNonce >= 0xffff0000)
+                if (pblock->nNonce >= 0xffff0000)
                     break;
                 if (mempool.GetTransactionsUpdated() != nTransactionsUpdatedLast && GetTime() - nStart > 60)
                     break;
