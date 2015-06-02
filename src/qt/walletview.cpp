@@ -1,5 +1,5 @@
-// Copyright (c) 2011-2013 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Copyright (c) 2011-2013 The Bitcoin Core developers
+// Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "walletview.h"
@@ -12,6 +12,7 @@
 #include "optionsmodel.h"
 #include "overviewpage.h"
 #include "receivecoinsdialog.h"
+#include "scicon.h"
 #include "sendcoinsdialog.h"
 #include "signverifymessagedialog.h"
 #include "transactiontablemodel.h"
@@ -24,6 +25,7 @@
 #include <QActionGroup>
 #include <QFileDialog>
 #include <QHBoxLayout>
+#include <QProgressDialog>
 #include <QPushButton>
 #include <QVBoxLayout>
 
@@ -43,7 +45,7 @@ WalletView::WalletView(QWidget *parent):
     QPushButton *exportButton = new QPushButton(tr("&Export"), this);
     exportButton->setToolTip(tr("Export the data in the current tab to a file"));
 #ifndef Q_OS_MAC // Icons on push buttons are very uncommon on Mac
-    exportButton->setIcon(QIcon(":/icons/export"));
+    exportButton->setIcon(SingleColorIcon(":/icons/export"));
 #endif
     hbox_buttons->addStretch();
     hbox_buttons->addWidget(exportButton);
@@ -91,7 +93,7 @@ void WalletView::setBitcoinGUI(BitcoinGUI *gui)
         connect(this, SIGNAL(encryptionStatusChanged(int)), gui, SLOT(setEncryptionStatus(int)));
 
         // Pass through transaction notifications
-        connect(this, SIGNAL(incomingTransaction(QString,int,qint64,QString,QString)), gui, SLOT(incomingTransaction(QString,int,qint64,QString,QString)));
+        connect(this, SIGNAL(incomingTransaction(QString,int,CAmount,QString,QString,QString)), gui, SLOT(incomingTransaction(QString,int,CAmount,QString,QString,QString)));
     }
 }
 
@@ -100,6 +102,7 @@ void WalletView::setClientModel(ClientModel *clientModel)
     this->clientModel = clientModel;
 
     overviewPage->setClientModel(clientModel);
+    sendCoinsPage->setClientModel(clientModel);
 }
 
 void WalletView::setWalletModel(WalletModel *walletModel)
@@ -127,6 +130,9 @@ void WalletView::setWalletModel(WalletModel *walletModel)
 
         // Ask for passphrase if needed
         connect(walletModel, SIGNAL(requireUnlock()), this, SLOT(unlockWallet()));
+
+        // Show progress dialog
+        connect(walletModel, SIGNAL(showProgress(QString,int)), this, SLOT(showProgress(QString,int)));
     }
 }
 
@@ -137,13 +143,17 @@ void WalletView::processNewTransaction(const QModelIndex& parent, int start, int
         return;
 
     TransactionTableModel *ttm = walletModel->getTransactionTableModel();
+    if (!ttm || ttm->processingQueuedTransactions())
+        return;
 
     QString date = ttm->index(start, TransactionTableModel::Date, parent).data().toString();
     qint64 amount = ttm->index(start, TransactionTableModel::Amount, parent).data(Qt::EditRole).toULongLong();
     QString type = ttm->index(start, TransactionTableModel::Type, parent).data().toString();
-    QString address = ttm->index(start, TransactionTableModel::ToAddress, parent).data().toString();
+    QModelIndex index = ttm->index(start, 0, parent);
+    QString address = ttm->data(index, TransactionTableModel::AddressRole).toString();
+    QString label = ttm->data(index, TransactionTableModel::LabelRole).toString();
 
-    emit incomingTransaction(date, walletModel->getOptionsModel()->getDisplayUnit(), amount, type, address);
+    emit incomingTransaction(date, walletModel->getOptionsModel()->getDisplayUnit(), amount, type, address, label);
 }
 
 void WalletView::gotoOverviewPage()
@@ -263,8 +273,8 @@ void WalletView::usedSendingAddresses()
     if(!walletModel)
         return;
     AddressBookPage *dlg = new AddressBookPage(AddressBookPage::ForEditing, AddressBookPage::SendingTab, this);
-    dlg->setModel(walletModel->getAddressTableModel());
     dlg->setAttribute(Qt::WA_DeleteOnClose);
+    dlg->setModel(walletModel->getAddressTableModel());
     dlg->show();
 }
 
@@ -273,7 +283,30 @@ void WalletView::usedReceivingAddresses()
     if(!walletModel)
         return;
     AddressBookPage *dlg = new AddressBookPage(AddressBookPage::ForEditing, AddressBookPage::ReceivingTab, this);
-    dlg->setModel(walletModel->getAddressTableModel());
     dlg->setAttribute(Qt::WA_DeleteOnClose);
+    dlg->setModel(walletModel->getAddressTableModel());
     dlg->show();
+}
+
+void WalletView::showProgress(const QString &title, int nProgress)
+{
+    if (nProgress == 0)
+    {
+        progressDialog = new QProgressDialog(title, "", 0, 100);
+        progressDialog->setWindowModality(Qt::ApplicationModal);
+        progressDialog->setMinimumDuration(0);
+        progressDialog->setCancelButton(0);
+        progressDialog->setAutoClose(false);
+        progressDialog->setValue(0);
+    }
+    else if (nProgress == 100)
+    {
+        if (progressDialog)
+        {
+            progressDialog->close();
+            progressDialog->deleteLater();
+        }
+    }
+    else if (progressDialog)
+        progressDialog->setValue(nProgress);
 }

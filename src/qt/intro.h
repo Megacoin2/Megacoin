@@ -1,9 +1,9 @@
-// Copyright (c) 2011-2013 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Copyright (c) 2011-2013 The Bitcoin Core developers
+// Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef INTRO_H
-#define INTRO_H
+#ifndef BITCOIN_QT_INTRO_H
+#define BITCOIN_QT_INTRO_H
 
 #include <QDialog>
 #include <QMutex>
@@ -12,7 +12,7 @@
 class FreespaceChecker;
 
 namespace Ui {
-class Intro;
+    class Intro;
 }
 
 /** Introduction screen (pre-GUI startup).
@@ -36,7 +36,7 @@ public:
      * @note do NOT call global GetDataDir() before calling this function, this
      * will cause the wrong path to be cached.
      */
-    static void pickDataDirectory(bool fIsTestnet);
+    static void pickDataDirectory();
 
     /**
      * Determine default data directory for operating system.
@@ -70,4 +70,4 @@ private:
     friend class FreespaceChecker;
 };
 
-#endif // INTRO_H
+#endif // BITCOIN_QT_INTRO_H

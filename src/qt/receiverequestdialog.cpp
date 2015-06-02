@@ -1,5 +1,5 @@
-// Copyright (c) 2011-2013 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Copyright (c) 2011-2013 The Bitcoin Core developers
+// Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "receiverequestdialog.h"
@@ -11,17 +11,18 @@
 #include "optionsmodel.h"
 #include "walletmodel.h"
 
-#include <QPixmap>
 #include <QClipboard>
-#include <QMouseEvent>
 #include <QDrag>
+#include <QMenu>
 #include <QMimeData>
+#include <QMouseEvent>
+#include <QPixmap>
 #if QT_VERSION < 0x050000
 #include <QUrl>
 #endif
 
 #if defined(HAVE_CONFIG_H)
-#include "bitcoin-config.h" /* for USE_QRCODE */
+#include "config/bitcoin-config.h" /* for USE_QRCODE */
 #endif
 
 #ifdef USE_QRCODE
@@ -29,26 +30,27 @@
 #endif
 
 QRImageWidget::QRImageWidget(QWidget *parent):
-    QLabel(parent)
+    QLabel(parent), contextMenu(0)
 {
-    setContextMenuPolicy(Qt::ActionsContextMenu);
-
+    contextMenu = new QMenu();
     QAction *saveImageAction = new QAction(tr("&Save Image..."), this);
     connect(saveImageAction, SIGNAL(triggered()), this, SLOT(saveImage()));
-    addAction(saveImageAction);
+    contextMenu->addAction(saveImageAction);
     QAction *copyImageAction = new QAction(tr("&Copy Image"), this);
     connect(copyImageAction, SIGNAL(triggered()), this, SLOT(copyImage()));
-    addAction(copyImageAction);
+    contextMenu->addAction(copyImageAction);
 }
 
 QImage QRImageWidget::exportImage()
 {
+    if(!pixmap())
+        return QImage();
     return pixmap()->toImage().scaled(EXPORT_IMAGE_SIZE, EXPORT_IMAGE_SIZE);
 }
 
 void QRImageWidget::mousePressEvent(QMouseEvent *event)
 {
-    if(event->button() == Qt::LeftButton)
+    if(event->button() == Qt::LeftButton && pixmap())
     {
         event->accept();
         QMimeData *mimeData = new QMimeData;
@@ -64,6 +66,8 @@ void QRImageWidget::mousePressEvent(QMouseEvent *event)
 
 void QRImageWidget::saveImage()
 {
+    if(!pixmap())
+        return;
     QString fn = GUIUtil::getSaveFileName(this, tr("Save QR Code"), QString(), tr("PNG Image (*.png)"), NULL);
     if (!fn.isEmpty())
     {
@@ -73,7 +77,16 @@ void QRImageWidget::saveImage()
 
 void QRImageWidget::copyImage()
 {
+    if(!pixmap())
+        return;
     QApplication::clipboard()->setImage(exportImage());
+}
+
+void QRImageWidget::contextMenuEvent(QContextMenuEvent *event)
+{
+    if(!pixmap())
+        return;
+    contextMenu->exec(event->globalPos());
 }
 
 ReceiveRequestDialog::ReceiveRequestDialog(QWidget *parent) :
@@ -85,12 +98,10 @@ ReceiveRequestDialog::ReceiveRequestDialog(QWidget *parent) :
 
 #ifndef USE_QRCODE
     ui->btnSaveAs->setVisible(false);
-    ui->btnCopyImage->setVisible(false);
     ui->lblQRCode->setVisible(false);
 #endif
 
     connect(ui->btnSaveAs, SIGNAL(clicked()), ui->lblQRCode, SLOT(saveImage()));
-    connect(ui->btnCopyImage, SIGNAL(clicked()), ui->lblQRCode, SLOT(copyImage()));
 }
 
 ReceiveRequestDialog::~ReceiveRequestDialog()
@@ -177,13 +188,10 @@ void ReceiveRequestDialog::update()
 
 void ReceiveRequestDialog::on_btnCopyURI_clicked()
 {
-    QString uri = GUIUtil::formatBitcoinURI(info);
-    QApplication::clipboard()->setText(uri, QClipboard::Clipboard);
-    QApplication::clipboard()->setText(uri, QClipboard::Selection);
+    GUIUtil::setClipboard(GUIUtil::formatBitcoinURI(info));
 }
 
 void ReceiveRequestDialog::on_btnCopyAddress_clicked()
 {
-    QApplication::clipboard()->setText(info.address, QClipboard::Clipboard);
-    QApplication::clipboard()->setText(info.address, QClipboard::Selection);
+    GUIUtil::setClipboard(info.address);
 }

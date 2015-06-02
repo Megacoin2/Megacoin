@@ -1,9 +1,9 @@
-Bitcoin integration/staging tree
-================================
+Bitcoin Core integration/staging tree
+=====================================
 
-http://www.bitcoin.org
+[![Build Status](https://travis-ci.org/bitcoin/bitcoin.svg?branch=master)](https://travis-ci.org/bitcoin/bitcoin)
 
-Copyright (c) 2009-2013 Bitcoin Developers
+https://www.bitcoin.org
 
 What is Bitcoin?
 ----------------
@@ -11,16 +11,16 @@ What is Bitcoin?
 Bitcoin is an experimental new digital currency that enables instant payments to
 anyone, anywhere in the world. Bitcoin uses peer-to-peer technology to operate
 with no central authority: managing transactions and issuing money are carried
-out collectively by the network. Bitcoin is also the name of the open source
+out collectively by the network. Bitcoin Core is the name of open source
 software which enables the use of this currency.
 
 For more information, as well as an immediately useable, binary version of
-the Bitcoin client software, see http://www.bitcoin.org.
+the Bitcoin Core software, see https://www.bitcoin.org/en/download.
 
 License
 -------
 
-Bitcoin is released under the terms of the MIT license. See [COPYING](COPYING) for more
+Bitcoin Core is released under the terms of the MIT license. See [COPYING](COPYING) for more
 information or see http://opensource.org/licenses/MIT.
 
 Development process
@@ -38,7 +38,7 @@ submitter will be asked to start a discussion (if they haven't already) on the
 
 The patch will be accepted if there is broad consensus that it is a good thing.
 Developers should expect to rework and resubmit patches if the code doesn't
-match the project's coding conventions (see [doc/coding.md](doc/coding.md)) or are
+match the project's coding conventions (see [doc/developer-notes.md](doc/developer-notes.md)) or are
 controversial.
 
 The `master` branch is regularly built and tested, but is not guaranteed to be
@@ -49,8 +49,8 @@ Testing
 -------
 
 Testing and code review is the bottleneck for development; we get more pull
-requests than we can review and test. Please be patient and help out, and
-remember this is a security-critical project where any mistake might cost people
+requests than we can review and test on short notice. Please be patient and help out by testing
+other people's pull requests, and remember this is a security-critical project where any mistake might cost people
 lots of money.
 
 ### Automated Testing
@@ -69,3 +69,17 @@ for the build/test scripts.
 Large changes should have a test plan, and should be tested by somebody other
 than the developer who wrote the code.
 See https://github.com/bitcoin/QA/ for how to create a test plan.
+
+Translations
+------------
+
+Changes to translations as well as new translations can be submitted to
+[Bitcoin Core's Transifex page](https://www.transifex.com/projects/p/bitcoin/).
+
+Translations are periodically pulled from Transifex and merged into the git repository. See the
+[translation process](doc/translation_process.md) for details on how this works.
+
+**Important**: We do not accept translation changes as GitHub pull requests because the next
+pull from Transifex would automatically overwrite them again.
+
+Translators should also subscribe to the [mailing list](https://groups.google.com/forum/#!forum/bitcoin-translators).

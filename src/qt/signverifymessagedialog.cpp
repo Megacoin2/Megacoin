@@ -1,5 +1,5 @@
-// Copyright (c) 2011-2013 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Copyright (c) 2011-2013 The Bitcoin Core developers
+// Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "signverifymessagedialog.h"
@@ -7,11 +7,13 @@
 
 #include "addressbookpage.h"
 #include "guiutil.h"
+#include "scicon.h"
 #include "walletmodel.h"
 
 #include "base58.h"
 #include "init.h"
-#include "wallet.h"
+#include "main.h" // For strMessageMagic
+#include "wallet/wallet.h"
 
 #include <string>
 #include <vector>
@@ -25,13 +27,17 @@ SignVerifyMessageDialog::SignVerifyMessageDialog(QWidget *parent) :
 {
     ui->setupUi(this);
 
-#if (QT_VERSION >= 0x040700)
-    /* Do not move this to the XML file, Qt before 4.7 will choke on it */
-    ui->addressIn_SM->setPlaceholderText(tr("Enter a Bitcoin address (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)"));
-    ui->signatureOut_SM->setPlaceholderText(tr("Click \"Sign Message\" to generate signature"));
+    ui->addressBookButton_SM->setIcon(SingleColorIcon(":/icons/address-book"));
+    ui->pasteButton_SM->setIcon(SingleColorIcon(":/icons/editpaste"));
+    ui->copySignatureButton_SM->setIcon(SingleColorIcon(":/icons/editcopy"));
+    ui->signMessageButton_SM->setIcon(SingleColorIcon(":/icons/edit"));
+    ui->clearButton_SM->setIcon(SingleColorIcon(":/icons/remove"));
+    ui->addressBookButton_VM->setIcon(SingleColorIcon(":/icons/address-book"));
+    ui->verifyMessageButton_VM->setIcon(SingleColorIcon(":/icons/transaction_0"));
+    ui->clearButton_VM->setIcon(SingleColorIcon(":/icons/remove"));
 
-    ui->addressIn_VM->setPlaceholderText(tr("Enter a Bitcoin address (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)"));
-    ui->signatureIn_VM->setPlaceholderText(tr("Enter Bitcoin signature"));
+#if QT_VERSION >= 0x040700
+    ui->signatureOut_SM->setPlaceholderText(tr("Click \"Sign Message\" to generate signature"));
 #endif
 
     GUIUtil::setupAddressWidget(ui->addressIn_SM, this);
@@ -73,7 +79,6 @@ void SignVerifyMessageDialog::setAddress_VM(const QString &address)
 void SignVerifyMessageDialog::showTab_SM(bool fShow)
 {
     ui->tabWidget->setCurrentIndex(0);
-
     if (fShow)
         this->show();
 }
@@ -114,7 +119,6 @@ void SignVerifyMessageDialog::on_signMessageButton_SM_clicked()
     CBitcoinAddress addr(ui->addressIn_SM->text().toStdString());
     if (!addr.IsValid())
     {
-        ui->addressIn_SM->setValid(false);
         ui->statusLabel_SM->setStyleSheet("QLabel { color: red; }");
         ui->statusLabel_SM->setText(tr("The entered address is invalid.") + QString(" ") + tr("Please check the address and try again."));
         return;
@@ -164,7 +168,7 @@ void SignVerifyMessageDialog::on_signMessageButton_SM_clicked()
 
 void SignVerifyMessageDialog::on_copySignatureButton_SM_clicked()
 {
-    QApplication::clipboard()->setText(ui->signatureOut_SM->text());
+    GUIUtil::setClipboard(ui->signatureOut_SM->text());
 }
 
 void SignVerifyMessageDialog::on_clearButton_SM_clicked()
@@ -195,7 +199,6 @@ void SignVerifyMessageDialog::on_verifyMessageButton_VM_clicked()
     CBitcoinAddress addr(ui->addressIn_VM->text().toStdString());
     if (!addr.IsValid())
     {
-        ui->addressIn_VM->setValid(false);
         ui->statusLabel_VM->setStyleSheet("QLabel { color: red; }");
         ui->statusLabel_VM->setText(tr("The entered address is invalid.") + QString(" ") + tr("Please check the address and try again."));
         return;
