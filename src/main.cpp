@@ -1188,6 +1188,7 @@ bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex)
     return true;
 }
 
+/*
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 {
     int halvings = nHeight / consensusParams.nSubsidyHalvingInterval;
@@ -1199,6 +1200,32 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
     // Subsidy is cut in half every 210,000 blocks which will occur approximately every 4 years.
     nSubsidy >>= halvings;
     return nSubsidy;
+}
+*/
+CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
+{
+   int64 nSubsidy = 500 * COIN;
+	/*
+		Total Coins: 42 Million
+		* 1st 5 Months, 21 Million Coins will be generated
+		  Every 21,000 Blocks (1 Month) the reward steps down from 500, 250, 125, 75, 50.
+		
+		* Through the next few decades the Remaining 21 Million will be generated
+		  Every 420,000 Blocks (2 Years), The reward starts at 25 and is Halved each period
+		  10.5 Million come from first 2 Years of 420K Blocks
+	*/
+	int BlockCountA = 21000;
+	int BlockCountB = 420000;
+	if (nHeight >= BlockCountA * 5)
+	{
+		nSubsidy = 25 * COIN;
+		nSubsidy >>= ((nHeight - (BlockCountA * 5)) / (BlockCountB)); // Subsidy is cut in half every 420000 blocks
+	}
+	else if (nHeight >= BlockCountA * 4) { nSubsidy = 50 * COIN; }
+	else if (nHeight >= BlockCountA * 3) { nSubsidy = 75 * COIN; }
+	else if (nHeight >= BlockCountA * 2) { nSubsidy = 125 * COIN; }
+	else if (nHeight >= BlockCountA) { nSubsidy = 250 * COIN; }
+	else { nSubsidy = 500 * COIN; }
 }
 
 bool IsInitialBlockDownload()
