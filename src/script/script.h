@@ -419,7 +419,7 @@ public:
         {
             insert(end(), OP_PUSHDATA2);
             uint8_t data[2];
-            WriteLE16(data, b.size());
+            /*WriteLE16(data, b.size());*/
             insert(end(), data, data + sizeof(data));
         }
         else
@@ -500,7 +500,7 @@ public:
             {
                 if (end() - pc < 2)
                     return false;
-                nSize = ReadLE16(&pc[0]);
+                /*nSize = ReadLE16(&pc[0]);*/
                 pc += 2;
             }
             else if (opcode == OP_PUSHDATA4)

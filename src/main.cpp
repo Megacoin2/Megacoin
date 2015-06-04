@@ -1204,7 +1204,7 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 */
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 {
-   int64 nSubsidy = 500 * COIN;
+   CAmount nSubsidy = 500 * COIN;
 	/*
 		Total Coins: 42 Million
 		* 1st 5 Months, 21 Million Coins will be generated
@@ -1225,7 +1225,7 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 	else if (nHeight >= BlockCountA * 3) { nSubsidy = 75 * COIN; }
 	else if (nHeight >= BlockCountA * 2) { nSubsidy = 125 * COIN; }
 	else if (nHeight >= BlockCountA) { nSubsidy = 250 * COIN; }
-	else { nSubsidy = 500 * COIN; }
+	return nSubsidy;
 }
 
 bool IsInitialBlockDownload()
