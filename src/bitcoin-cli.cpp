@@ -12,9 +12,8 @@
 
 #include <boost/filesystem/operations.hpp>
 
-#include "univalue/univalue.h"
-
 using namespace std;
+using namespace json_spirit;
 
 std::string HelpMessageCli()
 {
@@ -95,7 +94,7 @@ static bool AppInitRPC(int argc, char* argv[])
     return true;
 }
 
-UniValue CallRPC(const string& strMethod, const UniValue& params)
+Object CallRPC(const string& strMethod, const Array& params)
 {
     if (mapArgs["-rpcuser"] == "" && mapArgs["-rpcpassword"] == "")
         throw runtime_error(strprintf(
@@ -143,10 +142,10 @@ UniValue CallRPC(const string& strMethod, const UniValue& params)
         throw runtime_error("no response from server");
 
     // Parse reply
-    UniValue valReply(UniValue::VSTR);
-    if (!valReply.read(strReply))
+    Value valReply;
+    if (!read_string(strReply, valReply))
         throw runtime_error("couldn't parse reply from server");
-    const UniValue& reply = valReply.get_obj();
+    const Object& reply = valReply.get_obj();
     if (reply.empty())
         throw runtime_error("expected reply to have result, error and id properties");
 
@@ -171,34 +170,35 @@ int CommandLineRPC(int argc, char *argv[])
 
         // Parameters default to strings
         std::vector<std::string> strParams(&argv[2], &argv[argc]);
-        UniValue params = RPCConvertValues(strMethod, strParams);
+        Array params = RPCConvertValues(strMethod, strParams);
 
         // Execute and handle connection failures with -rpcwait
         const bool fWait = GetBoolArg("-rpcwait", false);
         do {
             try {
-                const UniValue reply = CallRPC(strMethod, params);
+                const Object reply = CallRPC(strMethod, params);
 
                 // Parse reply
-                const UniValue& result = find_value(reply, "result");
-                const UniValue& error  = find_value(reply, "error");
+                const Value& result = find_value(reply, "result");
+                const Value& error  = find_value(reply, "error");
 
-                if (!error.isNull()) {
+                if (error.type() != null_type) {
                     // Error
-                    int code = error["code"].get_int();
+                    const int code = find_value(error.get_obj(), "code").get_int();
                     if (fWait && code == RPC_IN_WARMUP)
                         throw CConnectionFailed("server in warmup");
-                    strPrint = "error: " + error.write();
+                    strPrint = "error: " + write_string(error, false);
                     nRet = abs(code);
                 } else {
                     // Result
-                    if (result.isNull())
+                    if (result.type() == null_type)
                         strPrint = "";
-                    else if (result.isStr())
+                    else if (result.type() == str_type)
                         strPrint = result.get_str();
                     else
-                        strPrint = result.write(2);
+                        strPrint = write_string(result, true);
                 }
+
                 // Connection succeeded, no need to retry.
                 break;
             }

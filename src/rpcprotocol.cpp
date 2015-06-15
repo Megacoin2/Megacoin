@@ -23,10 +23,10 @@
 #include <boost/iostreams/concepts.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <boost/shared_ptr.hpp>
-
-#include "univalue/univalue.h"
+#include "json/json_spirit_writer_template.h"
 
 using namespace std;
+using namespace json_spirit;
 
 //! Number of bytes to allocate and read at most at once in post data
 const size_t POST_READ_SIZE = 256 * 1024;
@@ -254,20 +254,20 @@ int ReadHTTPMessage(std::basic_istream<char>& stream, map<string,
  * http://www.codeproject.com/KB/recipes/JSON_Spirit.aspx
  */
 
-string JSONRPCRequest(const string& strMethod, const UniValue& params, const UniValue& id)
+string JSONRPCRequest(const string& strMethod, const Array& params, const Value& id)
 {
-    UniValue request(UniValue::VOBJ);
+    Object request;
     request.push_back(Pair("method", strMethod));
     request.push_back(Pair("params", params));
     request.push_back(Pair("id", id));
-    return request.write() + "\n";
+    return write_string(Value(request), false) + "\n";
 }
 
-UniValue JSONRPCReplyObj(const UniValue& result, const UniValue& error, const UniValue& id)
+Object JSONRPCReplyObj(const Value& result, const Value& error, const Value& id)
 {
-    UniValue reply(UniValue::VOBJ);
-    if (!error.isNull())
-        reply.push_back(Pair("result", NullUniValue));
+    Object reply;
+    if (error.type() != null_type)
+        reply.push_back(Pair("result", Value::null));
     else
         reply.push_back(Pair("result", result));
     reply.push_back(Pair("error", error));
@@ -275,15 +275,15 @@ UniValue JSONRPCReplyObj(const UniValue& result, const UniValue& error, const Un
     return reply;
 }
 
-string JSONRPCReply(const UniValue& result, const UniValue& error, const UniValue& id)
+string JSONRPCReply(const Value& result, const Value& error, const Value& id)
 {
-    UniValue reply = JSONRPCReplyObj(result, error, id);
-    return reply.write() + "\n";
+    Object reply = JSONRPCReplyObj(result, error, id);
+    return write_string(Value(reply), false) + "\n";
 }
 
-UniValue JSONRPCError(int code, const string& message)
+Object JSONRPCError(int code, const string& message)
 {
-    UniValue error(UniValue::VOBJ);
+    Object error;
     error.push_back(Pair("code", code));
     error.push_back(Pair("message", message));
     return error;
