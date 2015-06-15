@@ -4,17 +4,12 @@
 
 #include <stdint.h>
 #include <ctype.h>
-#include <iomanip>
 #include <sstream>
-#include <stdexcept>      // std::runtime_error
-
 #include "univalue.h"
-
-#include "utilstrencodings.h" // ParseXX
 
 using namespace std;
 
-const UniValue NullUniValue;
+static const UniValue nullValue;
 
 void UniValue::clear()
 {
@@ -83,11 +78,9 @@ bool UniValue::setFloat(double val)
     string s;
     ostringstream oss;
 
-    oss << std::setprecision(16) << val;
+    oss << val;
 
-    bool ret = setNumStr(oss.str());
-    typ = VREAL;
-    return ret;
+    return setNumStr(oss.str());
 }
 
 bool UniValue::setStr(const string& val_)
@@ -182,11 +175,11 @@ bool UniValue::checkObject(const std::map<std::string,UniValue::VType>& t)
 const UniValue& UniValue::operator[](const std::string& key) const
 {
     if (typ != VOBJ)
-        return NullUniValue;
+        return nullValue;
 
     int index = findKey(key);
     if (index < 0)
-        return NullUniValue;
+        return nullValue;
 
     return values[index];
 }
@@ -194,9 +187,9 @@ const UniValue& UniValue::operator[](const std::string& key) const
 const UniValue& UniValue::operator[](unsigned int index) const
 {
     if (typ != VOBJ && typ != VARR)
-        return NullUniValue;
+        return nullValue;
     if (index >= values.size())
-        return NullUniValue;
+        return nullValue;
 
     return values[index];
 }
@@ -210,95 +203,9 @@ const char *uvTypeName(UniValue::VType t)
     case UniValue::VARR: return "array";
     case UniValue::VSTR: return "string";
     case UniValue::VNUM: return "number";
-    case UniValue::VREAL: return "number";
     }
 
     // not reached
     return NULL;
-}
-
-const UniValue& find_value( const UniValue& obj, const std::string& name)
-{
-    for (unsigned int i = 0; i < obj.keys.size(); i++)
-    {
-        if( obj.keys[i] == name )
-        {
-            return obj.values[i];
-        }
-    }
-
-    return NullUniValue;
-}
-
-std::vector<std::string> UniValue::getKeys() const
-{
-    if (typ != VOBJ)
-        throw std::runtime_error("JSON value is not an object as expected");
-    return keys;
-}
-
-std::vector<UniValue> UniValue::getValues() const
-{
-    if (typ != VOBJ && typ != VARR)
-        throw std::runtime_error("JSON value is not an object or array as expected");
-    return values;
-}
-
-bool UniValue::get_bool() const
-{
-    if (typ != VBOOL)
-        throw std::runtime_error("JSON value is not a boolean as expected");
-    return getBool();
-}
-
-std::string UniValue::get_str() const
-{
-    if (typ != VSTR)
-        throw std::runtime_error("JSON value is not a string as expected");
-    return getValStr();
-}
-
-int UniValue::get_int() const
-{
-    if (typ != VNUM)
-        throw std::runtime_error("JSON value is not an integer as expected");
-    int32_t retval;
-    if (!ParseInt32(getValStr(), &retval))
-        throw std::runtime_error("JSON integer out of range");
-    return retval;
-}
-
-int64_t UniValue::get_int64() const
-{
-    if (typ != VNUM)
-        throw std::runtime_error("JSON value is not an integer as expected");
-    int64_t retval;
-    if (!ParseInt64(getValStr(), &retval))
-        throw std::runtime_error("JSON integer out of range");
-    return retval;
-}
-
-double UniValue::get_real() const
-{
-    if (typ != VREAL && typ != VNUM)
-        throw std::runtime_error("JSON value is not a number as expected");
-    double retval;
-    if (!ParseDouble(getValStr(), &retval))
-        throw std::runtime_error("JSON double out of range");
-    return retval;
-}
-
-const UniValue& UniValue::get_obj() const
-{
-    if (typ != VOBJ)
-        throw std::runtime_error("JSON value is not an object as expected");
-    return *this;
-}
-
-const UniValue& UniValue::get_array() const
-{
-    if (typ != VARR)
-        throw std::runtime_error("JSON value is not an array as expected");
-    return *this;
 }
 

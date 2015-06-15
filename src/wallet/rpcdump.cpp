@@ -19,8 +19,9 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-#include "univalue/univalue.h"
+#include "json/json_spirit_value.h"
 
+using namespace json_spirit;
 using namespace std;
 
 void EnsureWalletIsUnlocked();
@@ -69,10 +70,10 @@ std::string DecodeDumpString(const std::string &str) {
     return ret.str();
 }
 
-UniValue importprivkey(const UniValue& params, bool fHelp)
+Value importprivkey(const Array& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return NullUniValue;
+        return Value::null;
     
     if (fHelp || params.size() < 1 || params.size() > 3)
         throw runtime_error(
@@ -125,7 +126,7 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
 
         // Don't throw error in case a key is already there
         if (pwalletMain->HaveKey(vchAddress))
-            return NullUniValue;
+            return Value::null;
 
         pwalletMain->mapKeyMetadata[vchAddress].nCreateTime = 1;
 
@@ -140,13 +141,13 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
         }
     }
 
-    return NullUniValue;
+    return Value::null;
 }
 
-UniValue importaddress(const UniValue& params, bool fHelp)
+Value importaddress(const Array& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return NullUniValue;
+        return Value::null;
     
     if (fHelp || params.size() < 1 || params.size() > 3)
         throw runtime_error(
@@ -199,7 +200,7 @@ UniValue importaddress(const UniValue& params, bool fHelp)
 
         // Don't throw error in case an address is already there
         if (pwalletMain->HaveWatchOnly(script))
-            return NullUniValue;
+            return Value::null;
 
         pwalletMain->MarkDirty();
 
@@ -213,13 +214,13 @@ UniValue importaddress(const UniValue& params, bool fHelp)
         }
     }
 
-    return NullUniValue;
+    return Value::null;
 }
 
-UniValue importwallet(const UniValue& params, bool fHelp)
+Value importwallet(const Array& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return NullUniValue;
+        return Value::null;
     
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -317,13 +318,13 @@ UniValue importwallet(const UniValue& params, bool fHelp)
     if (!fGood)
         throw JSONRPCError(RPC_WALLET_ERROR, "Error adding some keys to wallet");
 
-    return NullUniValue;
+    return Value::null;
 }
 
-UniValue dumpprivkey(const UniValue& params, bool fHelp)
+Value dumpprivkey(const Array& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return NullUniValue;
+        return Value::null;
     
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -358,10 +359,10 @@ UniValue dumpprivkey(const UniValue& params, bool fHelp)
 }
 
 
-UniValue dumpwallet(const UniValue& params, bool fHelp)
+Value dumpwallet(const Array& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return NullUniValue;
+        return Value::null;
     
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -420,5 +421,5 @@ UniValue dumpwallet(const UniValue& params, bool fHelp)
     file << "\n";
     file << "# End of dump\n";
     file.close();
-    return NullUniValue;
+    return Value::null;
 }

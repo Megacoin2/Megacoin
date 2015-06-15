@@ -16,11 +16,12 @@
 
 #include <boost/foreach.hpp>
 
-#include "univalue/univalue.h"
+#include "json/json_spirit_value.h"
 
+using namespace json_spirit;
 using namespace std;
 
-UniValue getconnectioncount(const UniValue& params, bool fHelp)
+Value getconnectioncount(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
         throw runtime_error(
@@ -38,7 +39,7 @@ UniValue getconnectioncount(const UniValue& params, bool fHelp)
     return (int)vNodes.size();
 }
 
-UniValue ping(const UniValue& params, bool fHelp)
+Value ping(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
         throw runtime_error(
@@ -58,7 +59,7 @@ UniValue ping(const UniValue& params, bool fHelp)
         pNode->fPingQueued = true;
     }
 
-    return NullUniValue;
+    return Value::null;
 }
 
 static void CopyNodeStats(std::vector<CNodeStats>& vstats)
@@ -74,7 +75,7 @@ static void CopyNodeStats(std::vector<CNodeStats>& vstats)
     }
 }
 
-UniValue getpeerinfo(const UniValue& params, bool fHelp)
+Value getpeerinfo(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
         throw runtime_error(
@@ -119,10 +120,10 @@ UniValue getpeerinfo(const UniValue& params, bool fHelp)
     vector<CNodeStats> vstats;
     CopyNodeStats(vstats);
 
-    UniValue ret(UniValue::VARR);
+    Array ret;
 
     BOOST_FOREACH(const CNodeStats& stats, vstats) {
-        UniValue obj(UniValue::VOBJ);
+        Object obj;
         CNodeStateStats statestats;
         bool fStateStats = GetNodeStateStats(stats.nodeid, statestats);
         obj.push_back(Pair("id", stats.nodeid));
@@ -150,7 +151,7 @@ UniValue getpeerinfo(const UniValue& params, bool fHelp)
             obj.push_back(Pair("banscore", statestats.nMisbehavior));
             obj.push_back(Pair("synced_headers", statestats.nSyncHeight));
             obj.push_back(Pair("synced_blocks", statestats.nCommonHeight));
-            UniValue heights(UniValue::VARR);
+            Array heights;
             BOOST_FOREACH(int height, statestats.vHeightInFlight) {
                 heights.push_back(height);
             }
@@ -164,7 +165,7 @@ UniValue getpeerinfo(const UniValue& params, bool fHelp)
     return ret;
 }
 
-UniValue addnode(const UniValue& params, bool fHelp)
+Value addnode(const Array& params, bool fHelp)
 {
     string strCommand;
     if (params.size() == 2)
@@ -189,7 +190,7 @@ UniValue addnode(const UniValue& params, bool fHelp)
     {
         CAddress addr;
         OpenNetworkConnection(addr, NULL, strNode.c_str());
-        return NullUniValue;
+        return Value::null;
     }
 
     LOCK(cs_vAddedNodes);
@@ -211,10 +212,10 @@ UniValue addnode(const UniValue& params, bool fHelp)
         vAddedNodes.erase(it);
     }
 
-    return NullUniValue;
+    return Value::null;
 }
 
-UniValue getaddednodeinfo(const UniValue& params, bool fHelp)
+Value getaddednodeinfo(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
@@ -270,12 +271,12 @@ UniValue getaddednodeinfo(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_CLIENT_NODE_NOT_ADDED, "Error: Node has not been added.");
     }
 
-    UniValue ret(UniValue::VARR);
+    Array ret;
     if (!fDns)
     {
         BOOST_FOREACH(string& strAddNode, laddedNodes)
         {
-            UniValue obj(UniValue::VOBJ);
+            Object obj;
             obj.push_back(Pair("addednode", strAddNode));
             ret.push_back(obj);
         }
@@ -290,10 +291,10 @@ UniValue getaddednodeinfo(const UniValue& params, bool fHelp)
             laddedAddreses.push_back(make_pair(strAddNode, vservNode));
         else
         {
-            UniValue obj(UniValue::VOBJ);
+            Object obj;
             obj.push_back(Pair("addednode", strAddNode));
             obj.push_back(Pair("connected", false));
-            UniValue addresses(UniValue::VARR);
+            Array addresses;
             obj.push_back(Pair("addresses", addresses));
         }
     }
@@ -301,15 +302,15 @@ UniValue getaddednodeinfo(const UniValue& params, bool fHelp)
     LOCK(cs_vNodes);
     for (list<pair<string, vector<CService> > >::iterator it = laddedAddreses.begin(); it != laddedAddreses.end(); it++)
     {
-        UniValue obj(UniValue::VOBJ);
+        Object obj;
         obj.push_back(Pair("addednode", it->first));
 
-        UniValue addresses(UniValue::VARR);
+        Array addresses;
         bool fConnected = false;
         BOOST_FOREACH(CService& addrNode, it->second)
         {
             bool fFound = false;
-            UniValue node(UniValue::VOBJ);
+            Object node;
             node.push_back(Pair("address", addrNode.ToString()));
             BOOST_FOREACH(CNode* pnode, vNodes)
                 if (pnode->addr == addrNode)
@@ -331,7 +332,7 @@ UniValue getaddednodeinfo(const UniValue& params, bool fHelp)
     return ret;
 }
 
-UniValue getnettotals(const UniValue& params, bool fHelp)
+Value getnettotals(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() > 0)
         throw runtime_error(
@@ -349,23 +350,23 @@ UniValue getnettotals(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getnettotals", "")
        );
 
-    UniValue obj(UniValue::VOBJ);
+    Object obj;
     obj.push_back(Pair("totalbytesrecv", CNode::GetTotalBytesRecv()));
     obj.push_back(Pair("totalbytessent", CNode::GetTotalBytesSent()));
     obj.push_back(Pair("timemillis", GetTimeMillis()));
     return obj;
 }
 
-static UniValue GetNetworksInfo()
+static Array GetNetworksInfo()
 {
-    UniValue networks(UniValue::VARR);
+    Array networks;
     for(int n=0; n<NET_MAX; ++n)
     {
         enum Network network = static_cast<enum Network>(n);
         if(network == NET_UNROUTABLE)
             continue;
         proxyType proxy;
-        UniValue obj(UniValue::VOBJ);
+        Object obj;
         GetProxy(network, proxy);
         obj.push_back(Pair("name", GetNetworkName(network)));
         obj.push_back(Pair("limited", IsLimited(network)));
@@ -377,7 +378,7 @@ static UniValue GetNetworksInfo()
     return networks;
 }
 
-UniValue getnetworkinfo(const UniValue& params, bool fHelp)
+Value getnetworkinfo(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
         throw runtime_error(
@@ -417,7 +418,7 @@ UniValue getnetworkinfo(const UniValue& params, bool fHelp)
 
     LOCK(cs_main);
 
-    UniValue obj(UniValue::VOBJ);
+    Object obj;
     obj.push_back(Pair("version",       CLIENT_VERSION));
     obj.push_back(Pair("subversion",
         FormatSubVersion(CLIENT_NAME, CLIENT_VERSION, std::vector<string>())));
@@ -427,12 +428,12 @@ UniValue getnetworkinfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("connections",   (int)vNodes.size()));
     obj.push_back(Pair("networks",      GetNetworksInfo()));
     obj.push_back(Pair("relayfee",      ValueFromAmount(::minRelayTxFee.GetFeePerK())));
-    UniValue localAddresses(UniValue::VARR);
+    Array localAddresses;
     {
         LOCK(cs_mapLocalHost);
         BOOST_FOREACH(const PAIRTYPE(CNetAddr, LocalServiceInfo) &item, mapLocalHost)
         {
-            UniValue rec(UniValue::VOBJ);
+            Object rec;
             rec.push_back(Pair("address", item.first.ToString()));
             rec.push_back(Pair("port", item.second.nPort));
             rec.push_back(Pair("score", item.second.nScore));
