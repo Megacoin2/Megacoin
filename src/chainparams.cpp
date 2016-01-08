@@ -172,7 +172,8 @@ public:
         assert(genesis.hashMerkleRoot == uint256("0x6065d08d755e00a90449abe8a0923d0622feb6f7ab3f435c337369334119e636"));
 
 	vSeeds.push_back(CDNSSeedData("85.214.68.75", "85.214.68.75")); // Limx Dev 24-12-2015 First 10.3 Node
-        vSeeds.push_back(CDNSSeedData("megacoin.co.nz", "dnsseed.megacoin.co.nz")); // Limx Dev 07.08.2015 Online
+	vSeeds.push_back(CDNSSeedData("85.214.68.75", "37.120.190.76 "));
+	vSeeds.push_back(CDNSSeedData("megacoin.co.nz", "dnsseed.megacoin.co.nz")); // Limx Dev 07.08.2015 Online
         vSeeds.push_back(CDNSSeedData("xn--hlr20wf80a.com", "dnsseed.xn--hlr20wf80a.com")); // Limx Dev 07.08.2015 Off
         vSeeds.push_back(CDNSSeedData("megacoin.in", "dnsseed.megacoin.in")); // Limx Dev 07.08.2015 Off
         vSeeds.push_back(CDNSSeedData("144.76.118.88", "144.76.118.88")); //Blockr Explorer Online
