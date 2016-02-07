@@ -192,7 +192,7 @@ unsigned int static KimotoGravityWell2(const CBlockIndex* pindexLast, const CBlo
 	
 	if ((pblock-> nTime - pindexLast->GetBlockTime()) > nLongTimeLimit *4)  // Backupfunction after 4 hours 
 	{	
-	const int nLongTimebnNew   = 1000; bnNew = bnNew * nLongTimebnNew;
+	const int nLongTimebnNew   = 200; bnNew = bnNew * nLongTimebnNew;
        	LogPrintf("<MEC> KGW3 4h -  cute diff %08x %s\n", bnNew.GetCompact(), bnNew.ToString().c_str()); 
 	}
 	}
