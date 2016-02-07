@@ -105,7 +105,7 @@ unsigned int static KimotoGravityWell2(const CBlockIndex* pindexLast, const CBlo
     double                                EventHorizonDeviation;
     double                                EventHorizonDeviationFast;
     double                                EventHorizonDeviationSlow;
-    int KGW3_var = 550000;
+    int KGW3_var = 575000; // Revert Blockswitch for new KGW 550000 => 575000
   //  int64_t LastBlockTime = 0;
     if (BlockLastSolved == NULL || BlockLastSolved->nHeight == 0 || (uint64_t)BlockLastSolved->nHeight < PastBlocksMin) { return bnProofOfWorkLimit.GetCompact(); }
 
@@ -189,6 +189,15 @@ unsigned int static KimotoGravityWell2(const CBlockIndex* pindexLast, const CBlo
 	int aaa = pblock-> nTime - pindexLast->GetBlockTime();
 	LogPrintf("Time since last Block -  %d \n", aaa);
 	if (BlockReading->nHeight > KGW3_var){ 
+	
+	if ((pblock-> nTime - pindexLast->GetBlockTime()) > nLongTimeLimit *4)  // Backupfunction after 4 hours 
+	{	
+	const int nLongTimebnNew   = 1000; bnNew = bnNew * nLongTimebnNew;
+       	LogPrintf("<MEC> KGW3 4h -  cute diff %08x %s\n", bnNew.GetCompact(), bnNew.ToString().c_str()); 
+	}
+	}
+/* My first Solution for KGW... that is better but to expensiv for Megacoinnetwork
+if (BlockReading->nHeight > KGW3_var){ 
 	if ((pblock-> nTime - pindexLast->GetBlockTime()) > nLongTimeLimit )  // 1 hours
 	{	
 	const int nLongTimebnNew   = 2; bnNew = bnNew * nLongTimebnNew;
@@ -215,7 +224,7 @@ unsigned int static KimotoGravityWell2(const CBlockIndex* pindexLast, const CBlo
        	LogPrintf("<MEC> KGW3 5h -  cute diff %08x %s\n", bnNew.GetCompact(), bnNew.ToString().c_str()); 
 	}
 	}
-
+	*/
   
 
     if (bnNew > bnProofOfWorkLimit) { bnNew = bnProofOfWorkLimit; }
